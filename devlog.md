@@ -92,3 +92,110 @@ Plan going forwared for devlog commits and code commits
 -- Will go down the list and explain the function in more detail when implementing them, will commit the functions and devlog synchronously as the project is built, for today this was a high level design of the project and how the problem will be solved. 
 
 
+## Saturday 11/22/2025 -- Helper functions and implementing find_start/3 and is_exit/3
+
+Helper functions:
+
+cell/4 -- Acess a value inside the maze grid
+Purpose: a small helper function that retrieves the value stored at a specific row and column in the maze Since the maze is represented as a list of rows, each containing a list of cells. this function gives a clean, readable way to access any cell. 
+
+how it works:
+nth0(R, Maze, Row) selects the R-th row from the maze.
+nth0(C, Row, Val) selects the C-th column from that row
+the function succeeds with Val unified to whatever is stored at position (R,C).
+
+This keeps the rest of the maze logic simple. Instead of repeatedly calling nested nth0/3 operations everywhere, other functions like is_exit.3 and future movement functions can use cell/4 to find out the location. 
+
+
+in_bounds/3 -- Check whether a coordinate is inside the maze
+Purpose: ensures that a given row and column index fall within the valid boundaries of the maze. Because the solver will attempt to move up/down/left/right, we must prevent reading outside the grid. 
+
+how it works: 
+Retrieves the total number of rows from the outer list
+Users the nth0(0, Maze, Row) to read the first row so the program can determine how many columns the maze has
+Checks for row index is greater than or equal to 0 and less then number of rows
+Checks for column index is greater than or equal to 0 and less then number of columns
+
+If all the conditions hold, the function succeeds. 
+
+This prevents invalid memory acesss or ( invalid list access) when exploring the maze. All movement and pathfinding logic will depend on in_bounds/3 to ensure safe traversal. Its a foundational building block for the solver.
+
+find_start/3 -- Locate the start cell in the maze
+Purpose: find_start(Maze, Row, Col) scans the 2D maze and finds the coordinates of the start cell s. The solver uses this coordinate as the starting point for any path search. Coordinates are 1-based ( row = 1 is the first row, col = 1 is the first column) to align with nth1/3. 
+
+how it works:
+it scanes the maze row by row using nth1/3 on the outer list and then nth1/3 on the innter row list to find the s atom. 
+The function returns the first s encountered.
+This is simple and uses only standard prolog list indexing
+
+Example:
+Given maze { w, w, w, w
+             w, s, f, w
+             w, f, e, w
+             w, w, w, w }
+
+find_start/3 will produce Row = 2, Col = 2; 
+
+This function supplies the inital coordinates for the path-search routine, Every candiate action sequence will be applied beginning at these coordinates. 
+
+
+is_exit/3 -- test whether a coordinate is an exit
+Purpose: is_exit(Maze, Row, Col) succeeds when the cell at the coordinates (Row, Col) contains the exit atom e. The path-finding routine will use is_exit/3 to check if a sequence of actions ended at a valid exit.
+
+how it works:
+Using the small helper cell_at/4 which returns the atom at a given row and column using nth1/3.
+is_exit/3 simply checks that cell_at(Maze, Row, Col, e) succeeds. This also means it fails if the coordinates are out-of-bounds. 
+
+Example:
+Given maze { w, w, w, w
+             w, s, f, w
+             w, f, e, w
+             w, w, w, w }
+
+Here is_exit(Maze, 3, 3) succeeds because the cell = 3, row = 3 is e in the maze
+
+This function will be used by a later function implemented find_exit/2 (after simulating or executing actions) to verify whether the final position is a valid exit. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
