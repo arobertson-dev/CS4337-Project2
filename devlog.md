@@ -158,6 +158,59 @@ This function will be used by a later function implemented find_exit/2 (after si
 
 
 
+## Sunday 11/23/2025 --- Implementing valid_maze/1 and move/4 alongside some helper functions
+
+valid_maze/1 -- checks to make sure the maze is valid
+Purpose: This function verifies that a maze is properly structured before attempting to solve it, it prevents invalid maze inputs from causing incorrect results later in the program.
+
+How it works:
+- Ensures the maze is not empty
+- Ensures the maze is rectangular (all rows have the same number of columns)
+- Ensures there is exactly one start location (s)
+- Ensures there is at least one exit (e)
+
+This function acts as the first line of defense, if a maze does not meet structural requirements, the solver should immediately fail. this keeps the solver predictable and ensured the rest of the logic relies on a clean, well-defined maze. The predicate uses helper functions to detect the number of start and exit cells and confirms the row length consistency.
+
+
+helper function 1 for valid_maze/1 --> all_rows_same_length/1
+Purpose: This predicate ensures that the maze is a rectangular grid. In other words, every row must have the same number of columns.
+
+How it works:
+- Takes the first row of the maze and records its length
+- checks that every other row has the same length using maplist/2
+- fails if any row has a different number of columns
+
+A maze must be rectangular for coordinate-based navigation to work correctly, if the rows have inconsistent lengths, moves to the right or left might be valid in one row but non valid in another. By enforcing a rectangular structure early, the solver can safely assume consistent indexing for all rows. This makes movement, bounds checking and path computation simpler and more reliable.
+
+
+
+helper function 2 for valid_maze/1 --> same_length/2
+Purpose: This is a small helper used by all_rows_same_length/1 to compare a row's length to a given expected length. 
+
+How it works:
+- takes an integer N and a row
+- succeeds if the rows length is exactly N
+- fails if the row is shorter or longer
+
+this helper allows prologs maplist to iterate cleanly over all rows of the maze and enforce uniform length. It makes the rectangular maze check clean, and easy to understand. Seperating this logic keeps all_rows_same_length/1 readable and keeps validation checks modular. 
+
+
+
+
+move/4 - checks how movement in the maze when traversing it works
+Purpose: This function describes how movement in the maze works. Given a direction (left, right, up or down) and a current coordinate (row, col) it will compute the next coordinate. 
+
+How it works:
+- Left decreases the column index
+- right increases the column index
+- up decreases the row index
+- down increases the row index
+- does not perform bounds checks, only will compute new coordinates
+
+this function takes the logic away from the main solver so it doesnt need to manually manipulate the row and column indicies for every step. By keeping the movement logic seperate, the later functions to implement will become much easier and cleaner to maintain. Higher level functions will combine move/4 with checks like in_bounds/3 and cell/4 to ensure moves are legal. 
+
+
+
 
 
 
