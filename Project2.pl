@@ -35,3 +35,46 @@ find_start(Maze, R, C) :-
 is_exit(Maze, R, C) :-
     cell(Maze, R, C, e).    % Check if the value at (R, C) is 'e'
 
+
+% valid_maze(+Maze)
+% Succeeds if the maze is properly formed:
+%   - Maze is a non-empty list.
+%   - All rows have the same number of columns.
+%   - There is exactly one start cell 's'.
+%   - There is at least one exit cell 'e'.
+valid_maze(Maze) :-
+    Maze \= [],                     % Maze cannot be empty
+    all_rows_same_length(Maze),     % Ensure rectangular grid
+    findall((R,C), find_start(Maze, R, C), Starts),
+    length(Starts, start_count),    % Should be exactly one 's'
+    start_count =:= 1,
+    findall((R,C), is_exit(Maze, R, C), Exits),
+    Exits \= [].                    % Must have at least one exit
+
+
+% Helper function: true if all rows have the same number of columns.
+all_rows_same_length([FirstRow | OtherRows]) :-
+    length(FirstRow, N),
+    maplist(same_length(N), OtherRows).
+
+% Helper function: succeeds if Row has length N.
+same_length(N, Row) :-
+    length(Row, N).
+
+
+% move(+Direction, +Row, +Col, -NewRow-Col)
+% Computes new coordinates given a Direction.
+% Does NOT check bounds or walls — higher-level predicates handle that.
+move(left,  R, C, R-NewC) :-
+    NewC is C - 1.
+
+move(right, R, C, R-NewC) :-
+    NewC is C + 1.
+
+move(up,    R, C, NewR-C) :-
+    NewR is R - 1.
+
+move(down,  R, C, NewR-C) :-
+    NewR is R + 1.
+
+
