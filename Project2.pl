@@ -1,80 +1,88 @@
 
+% Project 2: Maze Solver
 
-% in_bounds(+Maze, +Row, +Col)
-% Succeeds if (Row, Col) is within the valid dimensions of the maze.
-% Checks that Row is between 0 and NumRows-1, and Col is between 0 and NumCols-1.
+
+% cell(+Maze, +Row, +Col, -Value)
+% Retrieves the value of a cell at (Row, Col) in the maze.
 cell(Maze, R, C, Val) :-
-    nth0(R, Maze, Row), % get the R-th row of the maze
-    nth0(C, Row, Val).  % get the C-th cell in that row
+    nth0(R, Maze, Row),   % Get the R-th row
+    nth0(C, Row, Val).    % Get the C-th column in that row
 
 
 % in_bounds(+Maze, +Row, +Col)
-% Succeeds if (Row, Col) is within the valid dimensions of the maze.
-% Checks that Row is between 0 and NumRows-1, and Col is between 0 and NumCols-1.
+% Checks if (Row, Col) is within the maze boundaries.
 in_bounds(Maze, R, C) :-
-    length(Maze, NumRows),  % Number of rows
-    R >= 0,
-    R < NumRows,
-    nth0(0, Maze, Row),     % Assume every row has the same number of columns
-    length(Row, NumCols),   % Number of columns
-    C >= 0,
-    C < NumCols.
+    length(Maze, NumRows),
+    R >= 0, R < NumRows,
+    nth0(0, Maze, Row),
+    length(Row, NumCols),
+    C >= 0, C < NumCols.
+
+
+% move(+Direction, +Row, +Col, -NewPos)
+% Computes new coordinates after moving in a direction.
+move(left,  R, C, (R, C2)) :- C2 is C - 1.
+move(right, R, C, (R, C2)) :- C2 is C + 1.
+move(up,    R, C, (R2, C)) :- R2 is R - 1.
+move(down,  R, C, (R2, C)) :- R2 is R + 1.
 
 
 % find_start(+Maze, -Row, -Col)
-% Finds the coordinates (Row, Col) of the start cell 's'.
-% Succeeds when Row and Col index into a cell containing 's'.
+% Finds the coordinates of the start cell 's'.
 find_start(Maze, R, C) :-
-    nth0(R, Maze, Row),     % Get row by index
-    nth0(C, Row, s).        % Find column where the value is 's'
+    nth0(R, Maze, Row),
+    nth0(C, Row, s).
 
 
 % is_exit(+Maze, +Row, +Col)
-% True if the cell at (Row, Col) contains an exit 'e'.
-% Reuses the cell/4 helper predicate for readability.
+% True if the cell at (Row, Col) is an exit 'e'.
 is_exit(Maze, R, C) :-
-    cell(Maze, R, C, e).    % Check if the value at (R, C) is 'e'
+    cell(Maze, R, C, e).
 
 
 % valid_maze(+Maze)
-% Succeeds if the maze is properly formed:
-%   - Maze is a non-empty list.
-%   - All rows have the same number of columns.
-%   - There is exactly one start cell 's'.
-%   - There is at least one exit cell 'e'.
+% Checks that the maze:
+% 1. Is not empty
+% 2. All rows have the same length
+% 3. Has exactly one start 's'
+% 4. Has at least one exit 'e'
 valid_maze(Maze) :-
-    Maze \= [],                     % Maze cannot be empty
-    all_rows_same_length(Maze),     % Ensure rectangular grid
+    Maze \= [],
+    all_rows_same_length(Maze),
     findall((R,C), find_start(Maze, R, C), Starts),
-    length(Starts, start_count),    % Should be exactly one 's'
-    start_count =:= 1,
+    length(Starts, 1),            % Exactly one start
     findall((R,C), is_exit(Maze, R, C), Exits),
-    Exits \= [].                    % Must have at least one exit
+    Exits \= [].                  % At least one exit exists
 
 
-% Helper function: true if all rows have the same number of columns.
-all_rows_same_length([FirstRow | OtherRows]) :-
+% all_rows_same_length(+Maze)
+% True if all rows have the same number of columns.
+all_rows_same_length([FirstRow|OtherRows]) :-
     length(FirstRow, N),
     maplist(same_length(N), OtherRows).
 
-% Helper function: succeeds if Row has length N.
-same_length(N, Row) :-
-    length(Row, N).
+same_length(N, Row) :- length(Row, N).
 
 
-% move(+Direction, +Row, +Col, -NewRow-Col)
-% Computes new coordinates given a Direction.
-% Does NOT check bounds or walls — higher-level predicates handle that.
-move(left,  R, C, R-NewC) :-
-    NewC is C - 1.
+% walk_actions(+Maze, +CurrentPos, +Visited, -Actions)
+% Recursively explores the maze generating a valid sequence of actions to exit.
+walk_actions(Maze, (R, C), _, []) :-
+    is_exit(Maze, R, C), !.  % Base case: reached exit
 
-move(right, R, C, R-NewC) :-
-    NewC is C + 1.
+walk_actions(Maze, (R, C), Visited, [Act|RestActions]) :-
+    member(Act, [left, right, up, down]),
+    move(Act, R, C, (R2, C2)),
+    in_bounds(Maze, R2, C2),
+    cell(Maze, R2, C2, Cell),
+    Cell \= w,
+    \+ member((R2, C2), Visited),
+    walk_actions(Maze, (R2, C2), [(R2, C2)|Visited], RestActions).
 
-move(up,    R, C, NewR-C) :-
-    NewR is R - 1.
 
-move(down,  R, C, NewR-C) :-
-    NewR is R + 1.
-
-
+% find_exit(+Maze, -Actions)
+% Top-level predicate: finds a valid sequence of moves from start to exit.
+find_exit(Maze, Actions) :-
+    valid_maze(Maze),
+    find_start(Maze, StartR, StartC),
+    Start = (StartR, StartC),
+    walk_actions(Maze, Start, [Start], Actions).
