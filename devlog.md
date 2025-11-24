@@ -210,6 +210,53 @@ How it works:
 this function takes the logic away from the main solver so it doesnt need to manually manipulate the row and column indicies for every step. By keeping the movement logic seperate, the later functions to implement will become much easier and cleaner to maintain. Higher level functions will combine move/4 with checks like in_bounds/3 and cell/4 to ensure moves are legal. 
 
 
+## Monday 11/24/2025 -- Implement walk/4, path_to_exit/3, find_exit/2
+
+walk/4 - core maze traversal using depth-first search (DFS)
+Purpose: It attempts to find a path from the current position to the exit by exploring neighbor cells recursivley. it is the heart of the maze solver and ties together all previously defined helper functions (move/4, is_exit/3, in_bounds/3 )
+
+how it works:
+- if the current coordinate (R,C) is the exit cell, the function suceeds immediately and returns a singleton path containing just the cell
+- calls move/4 to generate valid neighboring cells from current location
+- ensures next cell has not already been visited to prevent loops
+- Recursively continues the walk, adding each new position to the visited list
+- when the recursive call returns the path, the current cell is prepended and builds a full path back to the exit.
+
+this fuction is the main search algorithm of the maze solver, without walk/4 the program could identify valid cells and moves, but it couldn't actually navigate the maze. it transforms the project from static validation into a working AI-like search routine. 
+
+
+find_exit/2 -- scans the maze to locate the exit cell
+Purpose: Because the exit location can vary depending on the maze layout, this function provdies a clean way to retrieve the exit's coordinate before beginning the search. 
+
+how it works: 
+the function uses nth0/3 twice:
+- once to iterate through the rows of the maze
+- once to iterate through the columns of each row
+- when it encounters a cell containing e, it unfies the exit's (Row,Col) coordinates with the output argument, prolog (cut (!)) is used to stop searching after it finds the first exit, a well formedm maze shouldnt contain only one exit.
+
+The solver needs the maze's exit location before a path can be computed. Other parts of the program like path_to_exit and walk/4 rely on knowing exactly where the exit is located so the walker can terminate when that coordinate is reached. In other words, this predicate provides one of the main "anchors" needed to run the maze sovler.
+
+
+path_to_exit/3 --> top level solver for the project
+Purpose: given a maze, it returns 
+- Path --> ordered list of coordinates from the start 's' to the exit 'e'
+- result --> either scucess or failure
+This function ties together all previous components to form the maze-solving workflow.
+
+how it works:
+1. it calls find_start/3 to locate the starting cell
+2. it verifies the maze structure using valid_maze/1
+3. it packages the start position into a coordinate pair (R,C)
+4. it launches the recursive DFS walker using walk/4
+5. if walk/4 successfully finds a path, the function returns:
+   - path --> the accumulated list of visited coordinates
+   - result = success
+6. if any part of the process fails, the fallback clause returns:
+   - path --> []
+   - result --> failure
+
+this function represents the final integration step of the solver, it is what the user will call to get the maze path. all helper functions -- movement, bounds checking, cell reading, maze validation, walking logic, will feed into path_to_exit/3
+
 
 
 
